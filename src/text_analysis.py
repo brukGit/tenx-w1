@@ -1,8 +1,9 @@
 # src/text_analysis.py
 import pandas as pd
 from textblob import TextBlob
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
+
 
 class TextAnalysis:
     def __init__(self, df):
@@ -52,28 +53,29 @@ class TextAnalysis:
 
     def topic_modeling(self, n_topics=5, n_top_words=10):
         """
-        Perform topic modeling using Latent Dirichlet Allocation (LDA) on the headlines.
-        
-        :param n_topics: int, the number of topics to extract (default is 5)
-        :param n_top_words: int, the number of top words to display per topic (default is 10)
-        :return: None, prints the top words for each topic
-        """
-        # Initialize CountVectorizer
-        vectorizer = CountVectorizer(stop_words='english')
-        
-        # Fit and transform the headlines to get the document-term matrix
-        X = vectorizer.fit_transform(self.df['headline'])
-        
-        # Initialize Latent Dirichlet Allocation model
-        lda = LatentDirichletAllocation(n_components=n_topics, random_state=42)
-        
-        # Fit the LDA model on the data
-        lda.fit(X)
-        
-        # Print the top words for each topic
-        feature_names = vectorizer.get_feature_names_out()
-        for topic_idx, topic in enumerate(lda.components_):
-            print(f"Topic #{topic_idx + 1}:")
-            print(" ".join([feature_names[i] for i in topic.argsort()[:-n_top_words - 1:-1]]))
-            print()
+        Perform topic modeling using Latent Dirichlet Allocation (LDA).
 
+        Parameters:
+        - n_topics: Number of topics to extract
+        - n_top_words: Number of top words to display for each topic
+        """
+        # Ensure that 'headline' column exists and is not empty
+        if 'headline' not in self.df.columns or self.df['headline'].empty:
+            raise ValueError("DataFrame must contain a non-empty 'headline' column")
+
+        # Preprocessing and vectorization
+        tfidf_vectorizer = TfidfVectorizer(stop_words='english', max_df=0.95, min_df=2)
+        tfidf = tfidf_vectorizer.fit_transform(self.df['headline'])
+
+        # Fit LDA model
+        lda = LatentDirichletAllocation(n_components=n_topics, random_state=42, n_jobs=-1)
+        lda.fit(tfidf)
+
+        # Display topics
+        feature_names = tfidf_vectorizer.get_feature_names_out()
+        topics = []
+        for topic_idx, topic in enumerate(lda.components_):
+            top_words = [feature_names[i] for i in topic.argsort()[:-n_top_words - 1:-1]]
+            topics.append(f"Topic {topic_idx}: {' '.join(top_words)}")
+        
+        return topics
