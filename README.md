@@ -1,6 +1,6 @@
-# Solar Radiation Measurement EDA
+# Financial News and Stock Price Integration Dataset
 
-This project involves an Exploratory Data Analysis (EDA) of Solar Radiation Measurement data collected from three different countries. The goal is to analyze and visualize the data to uncover patterns, relationships, and potential anomalies.
+FNSPID (Financial News and Stock Price Integration Dataset), is a comprehensive financial dataset designed to enhance stock market predictions by combining quantitative and qualitative data.
 
 ## Table of Contents
 
