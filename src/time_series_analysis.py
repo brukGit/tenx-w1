@@ -37,7 +37,34 @@ class TimeSeriesAnalysis:
         plt.figure(figsize=(12, 6))
         hourly_counts.plot(kind='bar')
         plt.title('Number of Articles Published by Hour')
-        plt.xlabel('Hour of Day')
+        plt.xlabel('Hour of Day, EAT(UTC+3)')
         plt.ylabel('Number of Articles')
         plt.grid(True)
         plt.show()
+
+    def identify_spikes(self, threshold=2.0):
+        """
+        Identify spikes in article publications where the number of articles is significantly higher than average.
+        
+        :param threshold: float, multiplier of standard deviation above the mean to consider a spike
+        :return: DataFrame of spike dates and their counts
+        """
+        # Ensure the 'date' column is set as the index and is a DatetimeIndex
+        if not isinstance(self.df.index, pd.DatetimeIndex):
+            self.df['date'] = pd.to_datetime(self.df['date'], utc=True)
+            self.df.set_index('date', inplace=True)
+
+        # Resample by day and count the number of articles
+        daily_counts = self.df.resample('D').size()
+        
+        # Calculate mean and standard deviation of daily article counts
+        mean_count = daily_counts.mean()
+        std_count = daily_counts.std()
+
+        # Identify spikes as days with counts greater than mean + threshold * std_dev
+        spike_days = daily_counts[daily_counts > mean_count + threshold * std_count]
+        
+        # Sort the spike days in descending order of counts
+        spike_days_sorted = spike_days.sort_values(ascending=False)
+        
+        return spike_days_sorted

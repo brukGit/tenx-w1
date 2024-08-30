@@ -1,7 +1,9 @@
 import pandas as pd
+import pytz
 
 class DataLoader:
     def __init__(self, file_path):
+        
         self.file_path = file_path
 
     def load_data(self):
@@ -20,6 +22,9 @@ class DataLoader:
 
         # 3. Ensure 'date' column is in datetime format and contains timezone information
         df['date'] = pd.to_datetime(df['date'], utc=True, errors='coerce')
+
+        # 4. Convert 'date' to East Africa Time (EAT)
+        df['date'] = df['date'].dt.tz_convert('Africa/Nairobi')
 
         # 4. Remove rows with invalid dates
         df = df.dropna(subset=['date'])

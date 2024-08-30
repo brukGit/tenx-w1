@@ -1,10 +1,11 @@
 # src/text_analysis.py
 import pandas as pd
-from textblob import TextBlob
-from sklearn.feature_extraction.text import TfidfVectorizer
+
 from sklearn.decomposition import LatentDirichletAllocation
-
-
+from sklearn.feature_extraction.text import CountVectorizer
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.corpus import stopwords
 class TextAnalysis:
     def __init__(self, df):
         """
@@ -14,42 +15,68 @@ class TextAnalysis:
         """
         self.df = df
 
+    
+
     def perform_sentiment_analysis(self):
         """
-        Perform sentiment analysis on the headlines using TextBlob.
+        Perform sentiment analysis on the headlines using VADER's SentimentIntensityAnalyzer.
         
-        :return: DataFrame with added 'sentiment' column, where each sentiment is a tuple of polarity and subjectivity
+        :return: DataFrame with added 'sentiment' column, where each sentiment is classified as positive, neutral, negative, or strong negative.
         """
-        # Apply TextBlob to each headline to calculate sentiment
-        self.df['sentiment'] = self.df['headline'].apply(lambda x: TextBlob(x).sentiment)
+        # Initialize VADER sentiment intensity analyzer
+        analyzer = SentimentIntensityAnalyzer()
         
-        # Optional: Separate polarity and subjectivity for easier analysis
-        self.df['polarity'] = self.df['sentiment'].apply(lambda x: x.polarity)
-        self.df['subjectivity'] = self.df['sentiment'].apply(lambda x: x.subjectivity)
+        # Function to classify sentiment based on compound score
+        def classify_sentiment(compound):
+            if compound >= 0.5:
+                return 'positive'
+            elif 0.05 <= compound < 0.5:
+                return 'neutral'
+            elif -0.5 < compound < 0.05:
+                return 'negative'
+            else:
+                return 'strong negative'
         
-        return self.df[['headline', 'polarity', 'subjectivity']]
+        # Apply VADER sentiment analysis to each headline
+        self.df['sentiment'] = self.df['headline'].apply(lambda x: analyzer.polarity_scores(x))
+        
+        # Extract compound score for simplicity
+        self.df['compound'] = self.df['sentiment'].apply(lambda x: x['compound'])
+        
+        # Classify sentiment based on compound score
+        self.df['sentiment_class'] = self.df['compound'].apply(classify_sentiment)
+        
+        # Separate polarity (compound score) and subjectivity (not provided by VADER, so kept simple)
+        self.df['polarity'] = self.df['compound']
+        self.df['subjectivity'] = self.df['headline'].apply(lambda x: analyzer.polarity_scores(x)['neu'])  # Approximation using neutrality
 
-    def extract_keywords(self, ngram_range=(1, 2), max_features=100):
+        return self.df[['headline', 'polarity', 'subjectivity', 'sentiment_class']]
+
+
+    def extract_keywords(self, ngram_range=(2, 3), max_features=100):
         """
-        Extract common keywords or phrases from the headlines using CountVectorizer.
+        Extract common keywords or phrases from the headlines using TfidfVectorizer.
         
-        :param ngram_range: tuple, range of n-grams to consider (default is (1, 2) for unigrams and bigrams)
+        :param ngram_range: tuple, range of n-grams to consider (default is (2, 3) for unigrams, bigrams, and trigrams)
         :param max_features: int, maximum number of top keywords/phrases to return (default is 100)
         :return: DataFrame with keywords/phrases and their corresponding frequency counts
         """
-        # Initialize CountVectorizer with given parameters
-        vectorizer = CountVectorizer(ngram_range=ngram_range, max_features=max_features, stop_words='english')
+        # Extend the default stop words list
+        custom_stop_words = stopwords.words('english') 
+        
+        # Initialize TfidfVectorizer with given parameters
+        vectorizer = TfidfVectorizer(ngram_range=ngram_range, max_features=max_features, stop_words=custom_stop_words)
         
         # Fit and transform the headlines to extract n-grams
         X = vectorizer.fit_transform(self.df['headline'])
         
         # Convert the matrix to a DataFrame for easier viewing
-        keywords_df = pd.DataFrame(X.toarray(), columns=vectorizer.get_feature_names_out())
+        phrases_df = pd.DataFrame(X.toarray(), columns=vectorizer.get_feature_names_out())
         
-        # Sum up the occurrences of each keyword/phrase and sort by frequency
-        keyword_counts = keywords_df.sum(axis=0).sort_values(ascending=False)
+        # Sum up the occurrences of each phrase and sort by frequency
+        phrase_counts = phrases_df.sum(axis=0).sort_values(ascending=False)
         
-        return keyword_counts
+        return phrase_counts
 
     def topic_modeling(self, n_topics=5, n_top_words=10):
         """

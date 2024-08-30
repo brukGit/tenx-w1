@@ -162,3 +162,56 @@ class PublisherAnalysis:
         else:
             print("Model is not trained. Please train the model first.")
             return None
+        
+    def analyze_top_publishers_news_types(self, top_n=5):
+        """
+        Analyze the news types for the top N publishers and provide the share of each news type.
+        
+        Args:
+            top_n (int): Number of top publishers to analyze. Default is 5.
+        
+        Returns:
+            dict: A dictionary with publisher names as keys and their news type distribution as values.
+        """
+        # Ensure the model is trained and news types are categorized
+        if 'news_type' not in self.df.columns:
+            print("Categorizing news types...")
+            self.analyze_news_type()
+
+        # Get the top N publishers
+        top_publishers = self.df['publisher'].value_counts().head(top_n).index
+
+        # Initialize the result dictionary
+        result = {}
+
+        # Analyze news types for each top publisher
+        for publisher in top_publishers:
+            publisher_data = self.df[self.df['publisher'] == publisher]
+            news_type_counts = publisher_data['news_type'].value_counts()
+            total_articles = news_type_counts.sum()
+
+            # Calculate the share of each news type
+            news_type_shares = news_type_counts / total_articles
+
+            # Ensure all categories are present, even if they have 0 articles
+            all_categories = ['Politics', 'Economy', 'Health', 'Technology', 'Sports', 'Other']
+            news_type_shares = news_type_shares.reindex(all_categories, fill_value=0)
+
+            result[publisher] = news_type_shares.to_dict()
+
+        # Visualize the results using pie charts
+        fig, axes = plt.subplots(2, 3, figsize=(20, 15))
+        axes = axes.flatten()
+
+        for i, (publisher, shares) in enumerate(result.items()):
+            axes[i].pie(shares.values(), labels=shares.keys(), autopct='%1.1f%%', startangle=90)
+            axes[i].set_title(f"{publisher}'s News Type Distribution")
+
+        # Remove any unused subplots
+        for j in range(i+1, 6):
+            fig.delaxes(axes[j])
+
+        plt.tight_layout()
+        plt.show()
+
+        return result
