@@ -1,39 +1,68 @@
 import pandas as pd
+import os
 
 class DataLoader:
+    """
+    A class to load and preprocess stock price data from CSV files.
+    
+    Attributes:
+    -----------
+    file_paths : list
+        List of file paths to the historical data CSV files.
+        
+    Methods:
+    --------
+    load_data() -> dict:
+        Loads data from CSV files into a dictionary of DataFrames indexed by ticker symbols.
+        
+    clean_data(df: pd.DataFrame) -> pd.DataFrame:
+        Cleans the provided DataFrame by handling missing values, duplicates, and ensuring proper data types.
+    """
+    
     def __init__(self, file_paths):
-        if isinstance(file_paths, str):
-            file_paths = [file_paths]
+        """
+        Initializes the DataLoader with a list of file paths.
+        
+        Parameters:
+        -----------
+        file_paths : list
+            List of file paths to the historical data CSV files.
+        """
         self.file_paths = file_paths
 
     def load_data(self):
-        dataframes = []
+        """
+        Loads the stock price data from the specified CSV files into a dictionary of DataFrames.
+        
+        This method performs the following checks:
+        1. Ensures required columns are present.
+        2. Loads data from each file into a DataFrame.
+        
+        Returns:
+        --------
+        dict:
+            A dictionary of DataFrames indexed by ticker symbols.
+        """
+        dataframes = {}
+        required_columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
+
         for file_path in self.file_paths:
+            # Extract the ticker symbol from the file name
+            ticker = os.path.basename(file_path).split('_')[0]
+
+            # Load the CSV data into a DataFrame
             df = pd.read_csv(file_path)
-            dataframes.append(df)
-        return pd.concat(dataframes, ignore_index=True)
 
-    def clean_data(self, df):
-        """
-        Clean the data by handling missing values, removing duplicates, and
-        ensuring correct data types.
-        """
-        # 1. Drop rows where 'Date' is missing
-        df = df.dropna(subset=['Date'])
+            # Check if the required columns are present
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"Missing required columns {missing_columns} in file {file_path}")
 
-        # 2. Remove duplicates
-        df = df.drop_duplicates()
+            # Optionally set 'Date' as the index for time series analysis (can be done later)
+            df.set_index('Date', inplace=True)
 
-        # 3. Ensure 'Date' column is in datetime format and contains timezone information
-        df['Date'] = pd.to_datetime(df['Date'], utc=True, errors='coerce')
+            # Add the DataFrame to the dictionary
+            dataframes[ticker] = df
 
-        # 4. Remove rows with invalid dates
-        df = df.dropna(subset=['Date'])
+        return dataframes
 
-        # 5. Convert numerical columns to the appropriate data type (if needed)
-        numeric_columns = ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume', 'Dividends', 'Stock Splits']
-        for column in numeric_columns:
-            if column in df.columns:
-                df[column] = pd.to_numeric(df[column], errors='coerce')
-
-        return df
