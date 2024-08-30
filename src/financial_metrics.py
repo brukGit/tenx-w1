@@ -82,6 +82,11 @@ class FinancialMetrics:
             aligned_returns = stock_returns.align(market_returns, join='inner')
             covariance = np.cov(aligned_returns[0], aligned_returns[1])[0][1]
             market_variance = np.var(aligned_returns[1])
-            beta = covariance / market_variance
+            if market_variance == 0:
+                beta = np.nan  # or you could use 0 or 1, depending on your preference
+                print(f"Warning: Market variance is zero for {ticker}. Beta set to NaN.")
+            else:
+                beta = covariance / market_variance
+            
             betas[ticker] = beta
         return betas
