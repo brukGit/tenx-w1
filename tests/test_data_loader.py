@@ -5,7 +5,7 @@ from src.data_loader import DataLoader
 
 class TestDataLoader(unittest.TestCase):
     def setUp(self):
-        self.file_path = "path/to/test_file.csv"  # Use a test CSV file
+        self.file_path = "sample_data/raw_analyst_ratings/raw_analyst_ratings.csv"  # Use a test CSV file
         self.data_loader = DataLoader(self.file_path)
 
     def test_load_data(self):
