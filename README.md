@@ -52,7 +52,10 @@ To set up this project on your local machine, follow the steps below:
 ### Running the Notebooks
 To perform the EDA, navigate to the notebooks/ directory and open the provided Jupyter notebook. The notebook focuses on different aspects of the analysis, including descriptive statistics, time series analysis, and publisher analysis analysis.
     ```bash
-    jupyter notebook notebooks/descriptive_analytics.ipynb
+    jupyter notebook notebooks/descriptive_statistics.ipynb
+    jupyter notebook notebooks/text_analysis.ipynb
+    jupyter notebook notebooks/time_series_analysis.ipynb
+    jupyter notebook notebooks/publisher_analysis.ipynb
 
 ### Running the Notebooks
 You can use the script 'analyze_news.py' inside scripts directory to run all scripts located in 'src/' directory. Just change directory to scripts and executed the script inside. 
@@ -65,6 +68,9 @@ If you want to run unit tests to ensure that the functions work as expected (alt
     
 ```bash
     python -m unittest discover -s tests
+
+### Raw datasets
+Add your datasets inside data directory.
 
 ## Exploratory Data Analysis (EDA) Overview
 The EDA conducted in this project covers several key areas:
