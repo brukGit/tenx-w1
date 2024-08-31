@@ -1,5 +1,6 @@
 import pynance as pn
 import numpy as np
+import pandas as pd 
 
 class FinancialMetrics:
     """
@@ -75,18 +76,46 @@ class FinancialMetrics:
         return volatilities
     
     def calculate_beta(self, market_returns):
+        """
+        Calculate the Beta of each stock relative to the market.
+
+        The Beta coefficient measures the volatility of a stock in relation to the overall market. 
+        This function aligns the stock returns with the corresponding market returns, calculates the covariance 
+        between the stock and the market, and divides it by the variance of the market returns. 
+        If the market variance is zero, Beta is set to NaN.
+
+        Parameters:
+            market_returns (pd.Series): A Pandas Series representing the market returns with dates as the index.
+
+        Returns:
+            dict: A dictionary where keys are stock tickers and values are their respective Beta coefficients.
+        """
+
         betas = {}
         for ticker, df in self.data.items():
+            # Ensure 'Date' is in the correct datetime format and set as the index
+            df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
+            df.set_index('Date', inplace=True)
+            
             stock_returns = df['Close'].pct_change().dropna()
+
+            # Ensure market_returns is in the same datetime format
+            market_returns.index = pd.to_datetime(market_returns.index).tz_localize(None)
+            
             # Align the stock returns with market returns
-            aligned_returns = stock_returns.align(market_returns, join='inner')
-            covariance = np.cov(aligned_returns[0], aligned_returns[1])[0][1]
-            market_variance = np.var(aligned_returns[1])
+            aligned_stock_returns, aligned_market_returns = stock_returns.align(market_returns, join='inner')
+            
+           
+            # Calculate covariance and market variance
+            covariance = np.cov(aligned_stock_returns, aligned_market_returns)[0][1]
+            market_variance = np.var(aligned_market_returns)
+            
             if market_variance == 0:
-                beta = np.nan  # or you could use 0 or 1, depending on your preference
+                beta = np.nan  # Market variance is zero, beta is undefined
                 print(f"Warning: Market variance is zero for {ticker}. Beta set to NaN.")
             else:
                 beta = covariance / market_variance
             
             betas[ticker] = beta
+            
         return betas

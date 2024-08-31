@@ -43,7 +43,9 @@ class TechnicalIndicators:
             The window size for the moving average, by default 20.
         """
         for ticker, df in self.data.items():
-            df['MA'] = talib.SMA(df['Close'], timeperiod=window)
+            ma = talib.SMA(df['Close'], timeperiod=window)
+            df['MA'] = ma[window-1:]  # Remove NaN values
+            df['MA'].fillna(method='bfill', inplace=True)  # Backfill remaining NaNs
 
     def calculate_rsi(self, period=14):
         """
@@ -55,11 +57,25 @@ class TechnicalIndicators:
             The time period for calculating RSI, by default 14.
         """
         for ticker, df in self.data.items():
-            df['RSI'] = talib.RSI(df['Close'], timeperiod=period)
+            rsi = talib.RSI(df['Close'], timeperiod=period)
+            df['RSI'] = rsi[period:]  # Remove NaN values
+            df['RSI'].fillna(method='bfill', inplace=True)  # Backfill remaining NaNs
 
-    def calculate_macd(self):
+    def calculate_macd(self, fastperiod=12, slowperiod=26, signalperiod=9):
         """
         Calculates the MACD, MACD Signal, and MACD Histogram and adds them to each stock's DataFrame.
         """
         for ticker, df in self.data.items():
-            df['MACD'], df['MACD_signal'], df['MACD_hist'] = talib.MACD(df['Close'])
+            macd, signal, hist = talib.MACD(df['Close'], fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
+            
+            # Determine the index where MACD values start
+            start_index = max(fastperiod, slowperiod) - 1
+            
+            df['MACD'] = macd[start_index:]
+            df['MACD_signal'] = signal[start_index:]
+            df['MACD_Histogram'] = hist[start_index:]
+            
+            # Backfill remaining NaNs
+            df['MACD'].fillna(method='bfill', inplace=True)
+            df['MACD_signal'].fillna(method='bfill', inplace=True)
+            df['MACD_Histogram'].fillna(method='bfill', inplace=True)
