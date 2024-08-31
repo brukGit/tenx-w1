@@ -69,6 +69,8 @@ If you want to run unit tests to ensure that the functions work as expected (alt
 ```bash
     python -m unittest discover -s tests
 
+Use the sample csv data provided in sample_data directory for testing purposes.
+
 ### Raw datasets
 Add your datasets inside data directory.
 
