@@ -55,3 +55,7 @@ jobs:
       - name: Run tests
         run: |
           python -m unittest discover -s tests
+
+      - name: Check Streamlit app imports
+        run: |
+          python -c "import sys; sys.path.append('app'); import your_main_app_file"
