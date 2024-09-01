@@ -83,7 +83,7 @@ soupsieve==2.6
 stack-data==0.6.3
 streamlit==1.38.0
 # TA-Lib @ file:///E:/Studies/tenx/w1/TA_Lib-0.4.29-cp39-cp39-win_amd64.whl
-TA-Lib
+# TA-Lib
 tenacity==8.5.0
 textblob==0.18.0.post0
 threadpoolctl==3.5.0
