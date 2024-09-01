@@ -11,20 +11,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, '3.10']
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Update to match your Python version
-
-      - name: Uninstall existing ta-lib
-        run: |
-          pip uninstall -y ta-lib
-          pip uninstall -y ta-lib-bin
+          python-version: ${{ matrix.python-version }}
 
       - name: Print Python Version
         run: python --version
