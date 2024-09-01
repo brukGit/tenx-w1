@@ -21,15 +21,10 @@ jobs:
         with:
           python-version: '3.9'  # Update to match your Python version
 
-      - name: Install system dependencies
+      - name: Uninstall existing ta-lib
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential
-          sudo apt-get install -y libta-lib0-dev
-          sudo apt-get install -y wget
-          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-          tar -xzf ta-lib-0.4.0-src.tar.gz
-          cd ta-lib && ./configure --prefix=/usr && make && sudo make install
+          pip uninstall -y ta-lib
+          pip uninstall -y ta-lib-bin
 
       - name: Print Python Version
         run: python --version
