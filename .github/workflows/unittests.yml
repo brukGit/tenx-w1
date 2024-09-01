@@ -58,4 +58,4 @@ jobs:
 
       - name: Check Streamlit app imports
         run: |
-          python -c "import sys; sys.path.append('app'); import your_main_app_file"
+          python -c "import sys; sys.path.append('app'); import main"
