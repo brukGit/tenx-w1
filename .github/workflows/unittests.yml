@@ -3,10 +3,10 @@ name: Run Unit Tests
 on:
   push:
     branches:
-      - task-1
+      - task-2
   pull_request:
     branches:
-      - task-1
+      - task-2
 
 jobs:
   test:
