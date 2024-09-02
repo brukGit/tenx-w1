@@ -1,6 +1,9 @@
 [python]
 version = "3.9"
 
+[tool.poetry.dependencies]
+python = "^3.9"
+
 [theme]
 primaryColor = "#F63366"
 backgroundColor = "#FFFFFF"
