@@ -1,41 +1,76 @@
 import pandas as pd
 import pytz
 
+import yfinance as yf
+from datetime import datetime, timedelta
+
 class DataLoader:
-    def __init__(self, file_path):
+    def __init__(self, tickers, start_date=None, end_date=None):
+        self.tickers = tickers
+        self.dateRange = 50
+        self.start_date = start_date or datetime.now() - timedelta(days=365 * self.dateRange)  # Default to 50 years
+        self.end_date = end_date or datetime.now()
+
+    def fetch_data(self):
+        """
+        Fetches stock price data for the specified tickers using yfinance.
         
-        self.file_path = file_path
+        Returns:
+        --------
+        dict:
+            A dictionary of DataFrames indexed by ticker symbols.
+        """
+        dataframes = {}
+        for ticker in self.tickers:
+            stock = yf.Ticker(ticker)
+            df = stock.history(start=self.start_date, end=self.end_date)
+            
+            # Ensure required columns are present
+            required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"Missing required columns {missing_columns} for ticker {ticker}")
+            
+            # Drop rows with NaN values
+            df.dropna(inplace=True)
+            
+            # Optionally reset index to have 'Date' as a column
+            df.reset_index(inplace=True)
+            
+            dataframes[ticker] = df
+
+        return dataframes
+
 
     def load_data(self):
-        return pd.read_csv(self.file_path)
-
-    def clean_data(self, df):
         """
-        Clean the data by handling missing values, removing duplicates, and
-        ensuring correct data types.
+        Loads and processes the stock price data.
+        
+        This method performs the following:
+        1. Fetches data using yfinance.
+        2. Ensures required columns are present.
+        3. Drops rows with NaN values.
+        4. Sets 'Date' as the index.
+        
+        Returns:
+        --------
+        dict:
+            A dictionary of processed DataFrames indexed by ticker symbols.
         """
-        # 1. Drop rows where the 'headline' or 'date' is missing, as these are essential fields
-        df = df.dropna(subset=['headline', 'date'])
+        dataframes = self.fetch_data()
+        processed_dataframes = {}
 
-        # 2. Remove duplicates
-        df = df.drop_duplicates()
+        for ticker, df in dataframes.items():
+            
+                # Check if 'Date' column exists
+                if 'Date' not in df.columns:
+                    raise KeyError(f"The 'Date' column is missing from the DataFrame for ticker {ticker}")
+                
+                # Set 'Date' as the index for time series analysis
+                df.set_index('Date', inplace=True)
+                
+                # Add the processed DataFrame to the dictionary
+                processed_dataframes[ticker] = df
 
-        # 3. Ensure 'date' column is in datetime format and contains timezone information
-        df['date'] = pd.to_datetime(df['date'], utc=True, errors='coerce')
+        return processed_dataframes
 
-        # 4. Convert 'date' to East Africa Time (EAT)
-        df['date'] = df['date'].dt.tz_convert('Africa/Nairobi')
-
-        # 4. Remove rows with invalid dates
-        df = df.dropna(subset=['date'])
-
-        # 5. Convert 'headline_length' to an integer type (assuming it's already numeric)
-        if 'headline_length' in df.columns:
-            df['headline_length'] = pd.to_numeric(df['headline_length'], errors='coerce')
-            df = df.dropna(subset=['headline_length'])  # Remove rows with invalid headline lengths
-
-        # 6. Additional cleaning: Remove any whitespace from string columns
-        df['headline'] = df['headline'].str.strip()
-        df['publisher'] = df['publisher'].str.strip()
-
-        return df
