@@ -480,19 +480,7 @@ def main():
     # Remove the processing message after all plots are generated
     processing_message.empty()
 
-# Load data (this should be outside the main function as it's used globally)
-# file_paths = [
-#     "../data/yfinance_data/AAPL_historical_data.csv",
-#     "../data/yfinance_data/AMZN_historical_data.csv",
-#     "../data/yfinance_data/GOOG_historical_data.csv",
-#     "../data/yfinance_data/META_historical_data.csv",
-#     "../data/yfinance_data/MSFT_historical_data.csv",
-#     "../data/yfinance_data/NVDA_historical_data.csv",
-#     "../data/yfinance_data/TSLA_historical_data.csv",
-# ]
-# market_index_path = "../data/yfinance_data/SPY_historical_data.csv"
-
-# data, market_returns = load_and_process_data(file_paths, market_index_path)
+# tickers
 
 tickers = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
 index_ticker = ['SPY']
