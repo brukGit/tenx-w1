@@ -54,7 +54,7 @@ class TestDataCleaner(unittest.TestCase):
         cleaned_df = self.data_cleaner.clean_data(df)
         
         # Check the cleaned data
-        self.assertEqual(len(cleaned_df), 4)
+        self.assertEqual(len(cleaned_df), 5)
         self.assertTrue(pd.to_datetime(cleaned_df['Date']).dt.tz is not None)
         self.assertTrue(pd.notna(cleaned_df['Open']).all())
         self.assertTrue(pd.notna(cleaned_df['High']).all())

@@ -54,7 +54,7 @@ class TestDataLoader(unittest.TestCase):
         self.assertIn('TEST', data)
         self.assertIsInstance(data['TEST'], pd.DataFrame)
         self.assertEqual(len(data['TEST']), 3)
-        self.assertEqual(list(data['TEST'].columns), ['Open', 'High', 'Low', 'Close', 'Volume'])
+        self.assertListEqual(list(data['TEST'].columns), ['Open', 'High', 'Low', 'Close', 'Volume'])
         self.assertEqual(data['TEST'].index.name, 'Date')
 
     def test_missing_column(self):
@@ -78,6 +78,20 @@ class TestDataLoader(unittest.TestCase):
         # Test that ValueError is raised when a required column is missing
         with self.assertRaises(ValueError):
             incomplete_loader.load_data()
+
+    def test_empty_file(self):
+        """
+        Test that the DataLoader class raises a ValueError when the file is empty.
+        """
+        # Create an empty CSV file
+        empty_file_path = os.path.join(self.test_dir, 'EMPTY_historical_data.csv')
+        open(empty_file_path, 'w').close()
+        
+        empty_loader = DataLoader([empty_file_path])
+        
+        # Test that ValueError is raised when the file is empty
+        with self.assertRaises(ValueError):
+            empty_loader.load_data()
 
     def tearDown(self):
         """
