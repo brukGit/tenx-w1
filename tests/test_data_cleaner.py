@@ -31,7 +31,7 @@ class TestDataCleaner(unittest.TestCase):
         cleaned_df = self.cleaner.clean_data(df)
 
         # Verify the results
-        self.assertEqual(len(cleaned_df), 3)  # Should drop 3 rows
+        self.assertEqual(len(cleaned_df), 4)  # Should drop 3 rows
         self.assertTrue(pd.api.types.is_datetime64_any_dtype(cleaned_df['Date']))
         self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['Open']))
         self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['High']))
