@@ -47,12 +47,13 @@ class TestDataLoader(unittest.TestCase):
     def test_load_data(self):
         with patch('yfinance.Ticker') as MockTicker:
             mock_data = pd.DataFrame({
+                'Date': pd.date_range(start='2023-01-01', periods=2),
                 'Open': [100, 101],
                 'High': [102, 103],
                 'Low': [99, 100],
                 'Close': [101, 102],
                 'Volume': [1000, 1500]
-            }, index=pd.date_range(start='2023-01-01', periods=2))
+            })
 
             # Mock the history method of yfinance
             mock_ticker_instance = MockTicker.return_value
@@ -73,6 +74,7 @@ class TestDataLoader(unittest.TestCase):
                 self.assertEqual(df.index.name, 'Date')
                 self.assertTrue('Open' in df.columns)
                 self.assertTrue('Close' in df.columns)
+
 
 if __name__ == '__main__':
     unittest.main()

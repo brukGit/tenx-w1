@@ -80,7 +80,7 @@ def filter_data(data, start_date, end_date):
 def create_comparative_plots_per_ticker(data, ticker_selection):
     # Prepare data
     data = data[ticker_selection]
-    stats = data[['RSI', 'MA', 'MACD', 'MACD_signal']].describe().loc[['mean', 'std']]
+    stats = data[['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram']].describe().loc[['mean', 'std']]
     
     # Set up the plot style
     plt.style.use('seaborn-v0_8-darkgrid')
@@ -90,7 +90,7 @@ def create_comparative_plots_per_ticker(data, ticker_selection):
     fig1.suptitle('Technical Indicators Statistics', fontsize=16, color='#E0E0E0')
     fig1.patch.set_facecolor('#2C2C2C')
 
-    indicators = ['RSI', 'MA', 'MACD', 'MACD_signal']
+    indicators = ['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram']
     means = stats.loc['mean', indicators]
     stds = stats.loc['std', indicators]
     x = range(len(means))
@@ -133,7 +133,7 @@ def create_comparative_plots(data):
     # Prepare data
     stats = {}
     for ticker, df in data.items():
-        stats[ticker] = df[['RSI', 'MA', 'MACD', 'MACD_signal']].describe().loc[['mean', 'std']]
+        stats[ticker] = df[['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram']].describe().loc[['mean', 'std']]
     
     combined_stats = pd.concat(stats, axis=1)
 
@@ -142,7 +142,7 @@ def create_comparative_plots(data):
     fig.patch.set_facecolor('#2C2C2C')
     fig.suptitle('Comparative Technical Indicators Across Stocks', fontsize=16, color='#E0E0E0')
 
-    indicators = ['RSI', 'MA', 'MACD', 'MACD_signal']
+    indicators = ['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram']
     colors = ['#BB86FC', '#03DAC6', '#FF0266', '#CF6679']
 
     for i, indicator in enumerate(indicators):
@@ -179,19 +179,19 @@ def create_comparative_plots(data):
     
     # Plot MACD and MACD_signal on secondary y-axis
     sns.boxplot(x='Indicator', y='Value', hue='Ticker', 
-                data=data_melted[data_melted['Indicator'].isin(['MACD', 'MACD_signal'])], 
+                data=data_melted[data_melted['Indicator'].isin(['MACD', 'MACD_signal', 'MACD_Histogram'])], 
                 ax=ax2, palette=[colors[2], colors[3]])
 
     # Customize the plot
     ax1.set_ylabel('RSI and MA Values', color=colors[0])
-    ax2.set_ylabel('MACD and MACD_signal Values', color=colors[2])
+    ax2.set_ylabel('MACD, MACD_signal and MACD_Histogram Values', color=colors[2])
     ax1.legend(title='Ticker', bbox_to_anchor=(1.05, 1), loc='upper left', facecolor='#2C2C2C', edgecolor='#BB86FC', labelcolor='#E0E0E0')
     ax2.legend_.remove()  # Remove the second legend
     ax1.set_facecolor('#1E1E1E')
     ax1.tick_params(colors='#E0E0E0')
     ax2.tick_params(colors=colors[2])
 
-    plt.xticks(range(4), ['RSI', 'MA', 'MACD', 'MACD_signal'], color='#E0E0E0')
+    plt.xticks(range(4), ['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram'], color='#E0E0E0')
     
     plt.tight_layout()
 
@@ -302,7 +302,7 @@ def calculate_financial_metrics(data, market_returns):
     return metrics_df
 
 def plot_indicator_returns_correlation(ticker_data, ticker_selection):
-    columns_of_interest = ['RSI', 'MA', 'MACD', 'MACD_signal', 'Close', 'Returns']
+    columns_of_interest = ['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram', 'Close', 'Returns']
     corr_matrix = ticker_data[columns_of_interest].corr()
     
     fig, ax = plt.subplots(figsize=(10, 8))

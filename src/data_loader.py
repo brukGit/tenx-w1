@@ -58,11 +58,15 @@ class DataLoader:
         processed_dataframes = {}
 
         for ticker, df in dataframes.items():
-           
-            # Set 'Date' as the index for time series analysis
-            df.set_index('Date', inplace=True)
             
-            # Add the processed DataFrame to the dictionary
-            processed_dataframes[ticker] = df
+                # Check if 'Date' column exists
+                if 'Date' not in df.columns:
+                    raise KeyError(f"The 'Date' column is missing from the DataFrame for ticker {ticker}")
+                
+                # Set 'Date' as the index for time series analysis
+                df.set_index('Date', inplace=True)
+                
+                # Add the processed DataFrame to the dictionary
+                processed_dataframes[ticker] = df
 
         return processed_dataframes
