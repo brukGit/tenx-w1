@@ -1,42 +1,17 @@
 import pandas as pd
-import os
+import yfinance as yf
+from datetime import datetime, timedelta
 
 class DataLoader:
-    """
-    A class to load and preprocess stock price data from CSV files.
-    
-    Attributes:
-    -----------
-    file_paths : list
-        List of file paths to the historical data CSV files.
-        
-    Methods:
-    --------
-    load_data() -> dict:
-        Loads data from CSV files into a dictionary of DataFrames indexed by ticker symbols.
-        
-    clean_data(df: pd.DataFrame) -> pd.DataFrame:
-        Cleans the provided DataFrame by handling missing values, duplicates, and ensuring proper data types.
-    """
-    
-    def __init__(self, file_paths):
-        """
-        Initializes the DataLoader with a list of file paths.
-        
-        Parameters:
-        -----------
-        file_paths : list
-            List of file paths to the historical data CSV files.
-        """
-        self.file_paths = file_paths
+    def __init__(self, tickers, start_date=None, end_date=None):
+        self.tickers = tickers
+        self.dateRange = 50
+        self.start_date = start_date or datetime.now() - timedelta(days=365 * self.dateRange)  # Default to 50 years
+        self.end_date = end_date or datetime.now()
 
-    def load_data(self):
+    def fetch_data(self):
         """
-        Loads the stock price data from the specified CSV files into a dictionary of DataFrames.
-        
-        This method performs the following checks:
-        1. Ensures required columns are present.
-        2. Loads data from each file into a DataFrame.
+        Fetches stock price data for the specified tickers using yfinance.
         
         Returns:
         --------
@@ -44,25 +19,50 @@ class DataLoader:
             A dictionary of DataFrames indexed by ticker symbols.
         """
         dataframes = {}
-        required_columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
-
-        for file_path in self.file_paths:
-            # Extract the ticker symbol from the file name
-            ticker = os.path.basename(file_path).split('_')[0]
-
-            # Load the CSV data into a DataFrame
-            df = pd.read_csv(file_path)
-
-            # Check if the required columns are present
+        for ticker in self.tickers:
+            stock = yf.Ticker(ticker)
+            df = stock.history(start=self.start_date, end=self.end_date)
+            
+            # Ensure required columns are present
+            required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
-                raise ValueError(f"Missing required columns {missing_columns} in file {file_path}")
-
-            # Optionally set 'Date' as the index for time series analysis (can be done later)
-            df.set_index('Date', inplace=True)
-
-            # Add the DataFrame to the dictionary
+                raise ValueError(f"Missing required columns {missing_columns} for ticker {ticker}")
+            
+            # Drop rows with NaN values
+            df.dropna(inplace=True)
+            
+            # Optionally reset index to have 'Date' as a column
+            df.reset_index(inplace=True)
+            
             dataframes[ticker] = df
 
         return dataframes
 
+    def load_data(self):
+        """
+        Loads and processes the stock price data.
+        
+        This method performs the following:
+        1. Fetches data using yfinance.
+        2. Ensures required columns are present.
+        3. Drops rows with NaN values.
+        4. Sets 'Date' as the index.
+        
+        Returns:
+        --------
+        dict:
+            A dictionary of processed DataFrames indexed by ticker symbols.
+        """
+        dataframes = self.fetch_data()
+        processed_dataframes = {}
+
+        for ticker, df in dataframes.items():
+           
+            # Set 'Date' as the index for time series analysis
+            df.set_index('Date', inplace=True)
+            
+            # Add the processed DataFrame to the dictionary
+            processed_dataframes[ticker] = df
+
+        return processed_dataframes

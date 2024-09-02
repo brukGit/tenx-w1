@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime, timedelta
 import os
 import sys
 from datetime import datetime, timedelta
@@ -19,19 +20,37 @@ from src.financial_metrics import FinancialMetrics
 # Streamlit configuration
 st.set_page_config(layout="wide", page_title="Stock Analysis Dashboard")
 
+def fetch_stock_data(tickers, start_date, end_date):
+    data = {}
+    for ticker in tickers:
+        stock = yf.Ticker(ticker)
+        data[ticker] = stock.history(start=start_date, end=end_date)
+    return data
+
+def fetch_market_index(index_ticker, start_date, end_date):
+    index = yf.Ticker(index_ticker)
+    return index.history(start=start_date, end=end_date)
+
 # Function Definitions
 @st.cache_data
-def load_and_process_data(file_paths, market_index_path):
+def load_and_process_data(tickers, index_ticker, start_date, end_date):
     # Load data
-    loader = DataLoader(file_paths)
+    # Fetch stock data
+    loader = DataLoader(tickers, start_date, end_date)
+    loader_spy = DataLoader(index_ticker, start_date, end_date)
+
     data = loader.load_data()
-    
+    data_spy = loader_spy.load_data()
+       
+      
     # Clean data
     cleaner = DataCleaner()
     cleaned_data = {ticker: cleaner.clean_data(df) for ticker, df in data.items()}
-    
+    cleaned_data_spy = {ticker: cleaner.clean_data(df) for ticker, df in data_spy.items()}
     # Ensure index is datetime
     for ticker, df in cleaned_data.items():
+        df.index = pd.to_datetime(df['Date'])
+    for ticker, df in cleaned_data_spy.items():
         df.index = pd.to_datetime(df['Date'])
     
     # Calculate indicators
@@ -46,9 +65,11 @@ def load_and_process_data(file_paths, market_index_path):
         df['Cumulative Returns'] = (1 + df['Returns']).cumprod()
     
     # Load market data
-    market_data = pd.read_csv(market_index_path, index_col='Date', parse_dates=True)
-    market_returns = market_data['Close'].pct_change().dropna()
+    # market_data = pd.read_csv(market_index_path, index_col='Date', parse_dates=True)
+    market_returns = data_spy['SPY']['Close'].pct_change().dropna()
     
+   
+       
     return cleaned_data, market_returns
 
 @st.cache_data
@@ -460,18 +481,25 @@ def main():
     processing_message.empty()
 
 # Load data (this should be outside the main function as it's used globally)
-file_paths = [
-    "../data/yfinance_data/AAPL_historical_data.csv",
-    "../data/yfinance_data/AMZN_historical_data.csv",
-    "../data/yfinance_data/GOOG_historical_data.csv",
-    "../data/yfinance_data/META_historical_data.csv",
-    "../data/yfinance_data/MSFT_historical_data.csv",
-    "../data/yfinance_data/NVDA_historical_data.csv",
-    "../data/yfinance_data/TSLA_historical_data.csv",
-]
-market_index_path = "../data/yfinance_data/SPY_historical_data.csv"
+# file_paths = [
+#     "../data/yfinance_data/AAPL_historical_data.csv",
+#     "../data/yfinance_data/AMZN_historical_data.csv",
+#     "../data/yfinance_data/GOOG_historical_data.csv",
+#     "../data/yfinance_data/META_historical_data.csv",
+#     "../data/yfinance_data/MSFT_historical_data.csv",
+#     "../data/yfinance_data/NVDA_historical_data.csv",
+#     "../data/yfinance_data/TSLA_historical_data.csv",
+# ]
+# market_index_path = "../data/yfinance_data/SPY_historical_data.csv"
 
-data, market_returns = load_and_process_data(file_paths, market_index_path)
+# data, market_returns = load_and_process_data(file_paths, market_index_path)
+
+tickers = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
+index_ticker = ['SPY']
+end_date = datetime.now()
+start_date = end_date - timedelta(days=365 * 54)  # 5 years of data
+
+data, market_returns = load_and_process_data(tickers, index_ticker, start_date, end_date)
 
 if __name__ == "__main__":
     main()
