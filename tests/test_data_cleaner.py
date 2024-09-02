@@ -8,7 +8,7 @@ import sys
 src_dir = os.path.abspath(os.path.join(os.getcwd(), '..', 'src'))
 sys.path.insert(0, src_dir)
 
-from data_cleaner import DataCleaner
+from src.data_cleaner import DataCleaner
 class TestDataCleaner(unittest.TestCase):
 
     def setUp(self):

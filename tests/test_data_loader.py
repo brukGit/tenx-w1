@@ -10,7 +10,7 @@ import sys
 src_dir = os.path.abspath(os.path.join(os.getcwd(), '..', 'src'))
 sys.path.insert(0, src_dir)
 
-from data_loader import DataLoader
+from src.data_loader import DataLoader
 
 class TestDataLoader(unittest.TestCase):
 
