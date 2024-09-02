@@ -11,7 +11,13 @@ sys.path.insert(0, src_dir)
 from data_loader import DataLoader
 
 class TestDataLoader(unittest.TestCase):
+    """
+    Unit tests for the DataLoader class.
+    """
     def setUp(self):
+        """
+        Set up the test environment by creating a temporary directory and a mock CSV file.
+        """
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
         
@@ -23,6 +29,9 @@ class TestDataLoader(unittest.TestCase):
         self.data_loader = DataLoader([self.test_file_path])
 
     def create_mock_csv(self):
+        """
+        Create a mock CSV file with test data.
+        """
         data = {
             'Date': ['2023-01-01', '2023-01-02', '2023-01-03'],
             'Open': [100, 101, 102],
@@ -35,6 +44,9 @@ class TestDataLoader(unittest.TestCase):
         df.to_csv(self.test_file_path, index=False)
 
     def test_load_data(self):
+        """
+        Test the load_data method of the DataLoader class.
+        """
         # Test the load_data method
         data = self.data_loader.load_data()
         
@@ -46,6 +58,9 @@ class TestDataLoader(unittest.TestCase):
         self.assertEqual(data['TEST'].index.name, 'Date')
 
     def test_missing_column(self):
+        """
+        Test that the DataLoader class raises a ValueError when a required column is missing.
+        """
         # Create a CSV file with a missing required column
         incomplete_file_path = os.path.join(self.test_dir, 'INCOMPLETE_historical_data.csv')
         incomplete_data = {
@@ -65,6 +80,9 @@ class TestDataLoader(unittest.TestCase):
             incomplete_loader.load_data()
 
     def tearDown(self):
+        """
+        Clean up the temporary directory after the tests are completed.
+        """
         # Clean up the temporary directory
         for file in os.listdir(self.test_dir):
             os.remove(os.path.join(self.test_dir, file))
