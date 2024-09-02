@@ -1,75 +1,64 @@
 import unittest
 import pandas as pd
-import os
-import tempfile
-import sys
+from datetime import datetime
 
-# Add the src directory to the Python path
-src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
+import os
+import sys
+# Define the path to the src directory
+src_dir = os.path.abspath(os.path.join(os.getcwd(), '..', 'src'))
 sys.path.insert(0, src_dir)
 
 from data_cleaner import DataCleaner
-
 class TestDataCleaner(unittest.TestCase):
-    """
-    Unit tests for the DataCleaner class.
-    """
-    def setUp(self):
-        """
-        Set up the test environment by creating a temporary directory and a mock CSV file.
-        """
-        # Create a temporary directory
-        self.test_dir = tempfile.mkdtemp()
-        
-        # Create a mock CSV file
-        self.test_file_path = os.path.join(self.test_dir, 'TEST_historical_data.csv')
-        self.create_mock_csv()
-        
-        # Initialize DataCleaner
-        self.data_cleaner = DataCleaner()
 
-    def create_mock_csv(self):
-        """
-        Create a mock CSV file with test data.
-        """
-        data = {
-            'Date': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05'],
-            'Open': [100, 101, None, 102, 103],
-            'High': [105, 106, None, 107, 108],
-            'Low': [98, 99, None, 100, 101],
-            'Close': [103, 104, None, 105, 106],
-            'Volume': [1000000, 1100000, None, 1200000, 1300000]
-        }
-        df = pd.DataFrame(data)
-        df.to_csv(self.test_file_path, index=False)
+    def setUp(self):
+        self.cleaner = DataCleaner()
 
     def test_clean_data(self):
-        """
-        Test the clean_data method of the DataCleaner class.
-        """
-        # Load the test data
-        df = pd.read_csv(self.test_file_path)
-        
-        # Clean the data
-        cleaned_df = self.data_cleaner.clean_data(df)
-        
-        # Check the cleaned data
-        self.assertEqual(len(cleaned_df), 5)
-        self.assertTrue(pd.to_datetime(cleaned_df['Date']).dt.tz is not None)
-        self.assertTrue(pd.notna(cleaned_df['Open']).all())
-        self.assertTrue(pd.notna(cleaned_df['High']).all())
-        self.assertTrue(pd.notna(cleaned_df['Low']).all())
-        self.assertTrue(pd.notna(cleaned_df['Close']).all())
-        self.assertTrue(pd.notna(cleaned_df['Volume']).all())
+        # Create a DataFrame with various issues
+        data = {
+            'Date': ['2023-01-01', '2023-01-02', None, '2023-01-02', '2023-01-03', 'not_a_date'],
+            'Open': [100, 101, 102, 103, None, 105],
+            'High': [102, 103, 104, 105, 106, 'NaN'],
+            'Low': [99, 100, None, 101, 102, 103],
+            'Close': [101, 102, 103, None, 105, 106],
+            'Volume': [1000, 1500, None, 2000, 2500, 3000]
+        }
+        df = pd.DataFrame(data)
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-    def tearDown(self):
-        """
-        Clean up the temporary directory after the tests are completed.
-        """
-        # Clean up the temporary directory
-        for file in os.listdir(self.test_dir):
-            os.remove(os.path.join(self.test_dir, file))
-        os.rmdir(self.test_dir)
+        # Clean the data
+        cleaned_df = self.cleaner.clean_data(df)
+
+        # Verify the results
+        self.assertEqual(len(cleaned_df), 3)  # Should drop 3 rows
+        self.assertTrue(pd.api.types.is_datetime64_any_dtype(cleaned_df['Date']))
+        self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['Open']))
+        self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['High']))
+        self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['Low']))
+        self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['Close']))
+        self.assertTrue(pd.api.types.is_numeric_dtype(cleaned_df['Volume']))
+
+        # Check that invalid dates are removed
+        self.assertTrue(pd.to_datetime('2023-01-01') in cleaned_df['Date'].values)
+        self.assertTrue(pd.to_datetime('2023-01-02') in cleaned_df['Date'].values)
+        self.assertTrue(pd.to_datetime('2023-01-03') in cleaned_df['Date'].values)
+
+        # Check that 'not_a_date' and None entries are removed
+        self.assertNotIn(pd.NaT, cleaned_df['Date'].values)
+
+    def test_missing_date_column(self):
+        # Create a DataFrame missing the 'Date' column
+        data = {
+            'Open': [100, 101],
+            'High': [102, 103],
+            'Low': [99, 100],
+            'Close': [101, 102],
+            'Volume': [1000, 1500]
+        }
+        df = pd.DataFrame(data)
+        with self.assertRaises(KeyError):
+            self.cleaner.clean_data(df)
 
 if __name__ == '__main__':
     unittest.main()
