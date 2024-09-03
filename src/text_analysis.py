@@ -58,7 +58,7 @@ class TextAnalysis:
         plt.title('Sentiment Distribution')
         plt.show()
 
-        return self.df[['headline', 'polarity', 'subjectivity', 'sentiment_class']]
+        return self.df
 
 
     def extract_keywords(self, ngram_range=(2, 3), max_features=100):

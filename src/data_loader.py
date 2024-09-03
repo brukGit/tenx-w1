@@ -35,8 +35,18 @@ class DataLoader:
             
             df.dropna(inplace=True)
             df.reset_index(inplace=True)
+            df['Date'] = pd.to_datetime(df['Date'], utc=True, errors='coerce')
+            # Convert the timezone to EAT
+            df['Date'] = df['Date'].dt.tz_convert('Africa/Nairobi')
+            df.set_index('Date', inplace=True)
             dataframes[ticker] = df
         return dataframes
 
     def _load_news_data(self):
-        return pd.read_csv(self.file_path)
+        df = pd.read_csv(self.file_path)
+        df['date'] = pd.to_datetime(df['date'], utc=True, errors='coerce')
+        # Convert the timezone to EAT
+        df['date'] = df['date'].dt.tz_convert('Africa/Nairobi')
+
+        df.set_index('date', inplace=True)
+        return df
