@@ -17,6 +17,7 @@ from src.data_loader import DataLoader
 from src.data_cleaner import DataCleaner
 from src.indicators import TechnicalIndicators
 from src.financial_metrics import FinancialMetrics
+from src.text_analysis import TextAnalysis
 # Streamlit configuration
 st.set_page_config(layout="wide", page_title="Stock Analysis Dashboard")
 
@@ -33,34 +34,44 @@ def fetch_market_index(index_ticker, start_date, end_date):
 
 # Function Definitions
 @st.cache_data
-def load_and_process_data(tickers, index_ticker, start_date, end_date):
+def load_and_process_data(tickers, ticker_spy, filepath_news, start_date, end_date):
     # Load data
     # Fetch stock data
-    loader = DataLoader(tickers, start_date, end_date)
-    loader_spy = DataLoader(index_ticker, start_date, end_date)
-
-    data = loader.load_data()
-    data_spy = loader_spy.load_data()
+    
+    loader_stock = DataLoader('stock', tickers=tickers, start_date=start_date, end_date=end_date)
+    loader_stock_spy = DataLoader('stock', tickers=ticker_spy, start_date=start_date, end_date=end_date)
+    data = loader_stock.load_data()
+    data_spy = loader_stock_spy.load_data()
        
       
     # Clean data
     cleaner = DataCleaner()
-    cleaned_data = {ticker: cleaner.clean_data(df) for ticker, df in data.items()}
-    cleaned_data_spy = {ticker: cleaner.clean_data(df) for ticker, df in data_spy.items()}
-    # Ensure index is datetime
-    for ticker, df in cleaned_data.items():
-        df.index = pd.to_datetime(df['Date'])
-    for ticker, df in cleaned_data_spy.items():
-        df.index = pd.to_datetime(df['Date'])
+    cleaned_stock_data = {ticker: cleaner.clean_data(df, data_type='stock') for ticker, df in data.items()}
+    cleaned_stock_spy = {ticker: cleaner.clean_data(df,data_type='stock') for ticker, df in data_spy.items()}
     
+    # Initialize the DataLoader for news data
+    loader_news = DataLoader('news', file_path=filepath_news)
+
+    # Load the news data
+    news_data = loader_news.load_data()
+    # Initialize the DataCleaner
+    cleaner = DataCleaner()
+    # Clean the news data
+    cleaned_news_data = cleaner.clean_data(news_data, data_type='news')
+    
+    # Align stock and news data
+    aligned_data = cleaner.align_data(cleaned_stock_data, cleaned_news_data)
+    correlation_data = cleaner.prepare_for_correlation(aligned_data)
+    correlation_series = cleaner.calculate_and_plot_correlation(correlation_data)
+   
     # Calculate indicators
-    indicators = TechnicalIndicators(cleaned_data)
+    indicators = TechnicalIndicators(cleaned_stock_data)
     indicators.calculate_moving_average()
     indicators.calculate_rsi()
     indicators.calculate_macd()
     
     # Calculate returns
-    for ticker, df in cleaned_data.items():
+    for ticker, df in cleaned_stock_data.items():
         df['Returns'] = df['Close'].pct_change()
         df['Cumulative Returns'] = (1 + df['Returns']).cumprod()
     
@@ -70,11 +81,17 @@ def load_and_process_data(tickers, index_ticker, start_date, end_date):
     
    
        
-    return cleaned_data, market_returns
+    return cleaned_stock_data, cleaned_news_data, aligned_data, correlation_series, market_returns
 
 @st.cache_data
-def filter_data(data, start_date, end_date):
-    return {ticker: df[(df.index.date >= start_date) & (df.index.date <= end_date)] for ticker, df in data.items()}
+def filter_data(data_stock, data_news, start_date, end_date):
+    filtered_stock = {ticker: df[(df.index.date >= start_date) & (df.index.date <= end_date)] 
+                      for ticker, df in data_stock.items()}
+    filtered_news = data_news[(data_news.index.date >= start_date) & (data_news.index.date <= end_date)]
+    
+    return filtered_stock, filtered_news
+
+
 
 @st.cache_data
 def create_comparative_plots_per_ticker(data, ticker_selection):
@@ -300,7 +317,7 @@ def calculate_financial_metrics(data, market_returns):
         'Beta': betas
     })
     return metrics_df
-
+@st.cache_data
 def plot_indicator_returns_correlation(ticker_data, ticker_selection):
     columns_of_interest = ['RSI', 'MA', 'MACD', 'MACD_signal', 'MACD_Histogram', 'Close', 'Returns']
     corr_matrix = ticker_data[columns_of_interest].corr()
@@ -315,6 +332,64 @@ def plot_indicator_returns_correlation(ticker_data, ticker_selection):
     ax.set_title(f'Correlation Heatmap for {ticker_selection}', color='#E0E0E0')
     ax.tick_params(colors='#E0E0E0')
     return fig
+
+@st.cache_data
+def plot_sentiment_distribution(data_news):
+    # Plot pie chart
+    sentiment_counts = data_news['sentiment_class'].value_counts()
+    fig, ax = plt.subplots(figsize=(8, 6))
+    fig.patch.set_facecolor('#2C2C2C')
+
+    text_color  = '#E0E0E0'
+    ax.set_facecolor('#1E1E1E')
+    ax.tick_params(colors=text_color)
+    ax.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=140)
+    ax.set_title('Sentiment Distribution')
+    
+    return fig
+
+@st.cache_data
+def plot_stock_vs_news_correlation(correlation_series):
+     
+    # Plotting the heatmap
+    fig, ax = plt.subplots(figsize=(8, 6))
+    fig.patch.set_facecolor('#2C2C2C')
+    sns.heatmap(correlation_series.to_frame(), annot=True, cmap='coolwarm', cbar=True, linewidths=0.5)
+    ax.set_title(f'Correlation between Daily Sentiment and Stock Returns', color='#E0E0E0')
+    ax.tick_params(colors='#E0E0E0')
+    return fig
+
+@st.cache_data
+def plot_stock_news_sentiment(aligned_data):
+    # Initialize DataFrames to store aggregate returns and sentiment
+        all_returns = pd.DataFrame()
+        all_sentiment = pd.DataFrame()
+
+        # Loop through aligned data and aggregate returns and sentiment
+        for ticker, df in aligned_data.items():
+            all_returns[ticker] = df['Returns']
+            all_sentiment[ticker] = df['Daily_Sentiment']
+
+        # Aggregate returns and sentiment by taking the mean for each day
+        aggregate_returns = all_returns.mean(axis=1)
+        aggregate_sentiment = all_sentiment.mean(axis=1)
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 12), sharex=True)
+        fig.patch.set_facecolor('#2C2C2C')
+
+        ax1.set_xlabel('Date')
+        ax1.set_ylabel('Aggregate Returns', color='tab:blue')
+        ax1.plot(aggregate_returns.index, aggregate_returns, color='tab:blue', label='Aggregate Returns')
+        ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+        ax2 = ax1.twinx()  # Instantiate a second y-axis that shares the same x-axis
+        ax2.set_ylabel('Aggregate Daily Sentiment', color='tab:red')
+        ax2.plot(aggregate_sentiment.index, aggregate_sentiment, color='tab:red', label='Aggregate Daily Sentiment')
+        ax2.tick_params(axis='y', labelcolor='tab:red')
+
+        # Title and legend      
+       
+        return fig
 
 # Main App
 def main():
@@ -334,7 +409,7 @@ def main():
             background-color: #252526;
             color: #BB86FC;
         }
-                 .fixed-header {
+        .fixed-header {
         position: fixed;
         top: 10%;
         right: 2%;
@@ -347,6 +422,19 @@ def main():
         /* Sidebar styling */
         [data-testid=stSidebar] {
             background-color: #252526;
+        }
+                 /* Checkbox styling */
+        .stCheckbox {
+            font-size: 14px;
+            color: #BB86FC;
+        }
+        
+        .stCheckbox > label > div[role="checkbox"] {
+            border-color: #BB86FC !important;
+        }
+        
+        .stCheckbox > label > div[role="checkbox"]::before {
+            background-color: #BB86FC !important;
         }
         
         /* Other styles remain unchanged */
@@ -390,10 +478,10 @@ def main():
 
     # Sidebar for user input
     st.sidebar.title("Controls")
-    ticker_selection = st.sidebar.selectbox("Select a stock", list(data.keys()))
+    ticker_selection = st.sidebar.selectbox("Select a stock", list(data_stock.keys()))
 
     # Date range selection based on selected ticker
-    selected_data = data[ticker_selection]
+    selected_data = data_stock[ticker_selection]
     min_date = selected_data.index.min().date()
     max_date = selected_data.index.max().date()
 
@@ -427,8 +515,20 @@ def main():
         }
     </style>
     """, unsafe_allow_html=True)
+   # Plot selection
+    st.sidebar.title("Select Plots to Display")
+    show_descriptive_stats = st.sidebar.checkbox("Descriptive Statistics -  Tehchnical Indicators", value=False)
+    show_stock_indicators = st.sidebar.checkbox("Stock Price and Technical Indicators", value=False)
+    show_indicators_correlation = st.sidebar.checkbox("Technical Indicators and Stock Returns Correlation", value=False)
+    show_returns_comparison = st.sidebar.checkbox("Returns Comparison - All Tickers", value=False)
+    show_correlation_heatmap = st.sidebar.checkbox("Correlation Heatmap - All Tickers", value=False)
+    show_financial_metrics = st.sidebar.checkbox("Financial Metrics - All Tickers", value=False)
+    show_sentiment_distribution = st.sidebar.checkbox("News Headlines Sentiment Distribution", value=False)
+    show_stock_news_correlation = st.sidebar.checkbox("Stock and News Sentiment Correlation", value=False)
+    show_stock_news_sentiment = st.sidebar.checkbox("Stock and News Sentiment Over Time", value=False)
 
-    filtered_data = filter_data(data, start_date, end_date)
+    # Filter data based on date range
+    filtered_stock_data, filtered_news_data = filter_data(data_stock, data_news, start_date, end_date)
 
     # Main content
     with main_container:
@@ -436,58 +536,66 @@ def main():
         _, center_col, _ = st.columns([1, 18, 1])
         
         with center_col:
-            
             st.title("Stock Analysis Dashboard")
 
-            # # Descriptive statistics of indicators
-            # st.subheader("Descriptive Statistics of Indicators for All Tickers")
-            # fig1, fig2 = create_comparative_plots(data)
-            # st.pyplot(fig1)
-            # st.pyplot(fig2)
-             # Descriptive statistics of indicators
-            st.subheader(f"Descriptive Statistics of Indicators for {ticker_selection}".format(ticker_selection=ticker_selection))
-            fig1, fig2 = create_comparative_plots_per_ticker(filtered_data, ticker_selection)
-            st.pyplot(fig1)
-            st.pyplot(fig2)
+            if show_descriptive_stats:
+                st.subheader(f"Descriptive Statistics - Technical Indicators , {ticker_selection}")
+                fig1, fig2 = create_comparative_plots_per_ticker(filtered_stock_data, ticker_selection)
+                st.pyplot(fig1)
+                st.pyplot(fig2)
 
-            # Plot stock price and indicators
-            st.subheader(f"Stock Price and Technical Indicators for {ticker_selection}".format(ticker_selection=ticker_selection))
-            fig = plot_stock_indicators(filtered_data[ticker_selection], ticker_selection)
-            st.pyplot(fig)
+            if show_stock_indicators:
+                st.subheader(f"Stock Price and Technical Indicators , {ticker_selection}")
+                fig = plot_stock_indicators(filtered_stock_data[ticker_selection], ticker_selection)
+                st.pyplot(fig)
 
-            # Correlation between indicators and returns
-            st.subheader(f"Indicators to Returns Correlation for {ticker_selection}".format(ticker_selection=ticker_selection))
-            fig = plot_indicator_returns_correlation(filtered_data[ticker_selection], ticker_selection)
-            st.pyplot(fig)
+            if show_indicators_correlation:
+                st.subheader(f"Indicators and Stock Returns Correlation , {ticker_selection}")
+                fig = plot_indicator_returns_correlation(filtered_stock_data[ticker_selection], ticker_selection)
+                st.pyplot(fig)
 
-            # Plot returns comparison
-            st.subheader("Returns Comparison of All Tickers")
-            fig = plot_returns_comparison(filtered_data)
-            st.pyplot(fig)
+            if show_returns_comparison:
+                st.subheader("Returns Comparison - All Tickers")
+                fig = plot_returns_comparison(filtered_stock_data)
+                st.pyplot(fig)
 
-            # Correlation heatmap
-            st.subheader("Correlation Heatmap of All Tickers")
-            fig = plot_correlation_heatmap(filtered_data)
-            st.pyplot(fig)
+            if show_correlation_heatmap:
+                st.subheader("Correlation Heatmap - All Tickers")
+                fig = plot_correlation_heatmap(filtered_stock_data)
+                st.pyplot(fig)
 
-            # Financial metrics
-            st.subheader("Financial Metrics of All Tickers")
-            metrics_df = calculate_financial_metrics(filtered_data, market_returns)
-            st.dataframe(metrics_df.style.background_gradient(cmap='viridis', axis=0))
+            if show_financial_metrics:
+                st.subheader("Financial Metrics - All Tickers")
+                metrics_df = calculate_financial_metrics(filtered_stock_data, market_returns)
+                st.dataframe(metrics_df.style.background_gradient(cmap='viridis', axis=0))
+            
+            if show_sentiment_distribution:
+                st.subheader("News Headlines Sentiment Distribution")
+                fig = plot_sentiment_distribution(filtered_news_data)
+                st.pyplot(fig)
 
-           
+            if show_stock_news_correlation:
+                st.subheader("Stock and News Sentiment Correlation")
+                fig = plot_stock_vs_news_correlation(correlation_series)
+                st.pyplot(fig)
+
+            if show_stock_news_sentiment:
+                st.subheader("Stock and News Sentiment Over Time")
+                fig = plot_stock_news_sentiment(aligned_data)
+                st.pyplot(fig)
+            
 
     # Remove the processing message after all plots are generated
     processing_message.empty()
 
 # tickers
-
+filepath_news = "../data/raw_analyst_ratings/raw_analyst_ratings.csv"
 tickers = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
-index_ticker = ['SPY']
+ticker_spy = ['SPY']
 end_date = datetime.now()
 start_date = end_date - timedelta(days=365 * 50)  # 50 years of data
 
-data, market_returns = load_and_process_data(tickers, index_ticker, start_date, end_date)
+data_stock, data_news, aligned_data, correlation_series, market_returns = load_and_process_data(tickers, ticker_spy, filepath_news, start_date, end_date)
 
 if __name__ == "__main__":
     main()

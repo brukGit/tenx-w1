@@ -1,7 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from text_analysis import TextAnalysis
+from src.text_analysis import TextAnalysis
 
 class DataCleaner:
     def __init__(self):
@@ -127,7 +127,7 @@ class DataCleaner:
         # Convert results to a Series
         correlation_series = pd.Series(correlation_results, name='Pearson Correlation')
         
-        # Plotting the heatmap
+        # Plot the heatmap
         plt.figure(figsize=(10, 6))
         sns.heatmap(correlation_series.to_frame(), annot=True, cmap='coolwarm', cbar=True, linewidths=0.5)
         plt.title('Correlation between Daily Sentiment and Stock Returns')
@@ -137,7 +137,7 @@ class DataCleaner:
     
 
 
-    def plot_aggregate_returns_and_sentiment(self,aligned_data: dict):
+    def time_series_aggregate_returns_and_sentiment(self,aligned_data: dict):
         # Initialize DataFrames to store aggregate returns and sentiment
         all_returns = pd.DataFrame()
         all_sentiment = pd.DataFrame()

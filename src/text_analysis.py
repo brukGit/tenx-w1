@@ -52,11 +52,11 @@ class TextAnalysis:
         self.df['subjectivity'] = self.df['headline'].apply(lambda x: analyzer.polarity_scores(x)['neu'])  # Approximation using neutrality
 
         # Plot pie chart
-        sentiment_counts = self.df['sentiment_class'].value_counts()
-        plt.figure(figsize=(8, 6))
-        plt.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=140)
-        plt.title('Sentiment Distribution')
-        plt.show()
+        # sentiment_counts = self.df['sentiment_class'].value_counts()
+        # plt.figure(figsize=(8, 6))
+        # plt.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=140)
+        # plt.title('Sentiment Distribution')
+        # plt.show()
 
         return self.df
 

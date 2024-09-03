@@ -90,13 +90,13 @@ class FinancialMetrics:
         betas = {}
         for ticker, df in self.data.items():
             # Ensure 'Date' is in the correct datetime format and set as the index
-            df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
-            df.set_index('Date', inplace=True)
+            # df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
+            # df.set_index('Date', inplace=True)
             
             stock_returns = df['Close'].pct_change().dropna()
 
             # Ensure market_returns is in the same datetime format
-            market_returns.index = pd.to_datetime(market_returns.index).tz_localize(None)
+            # market_returns.index = pd.to_datetime(market_returns.index).tz_localize(None)
             
             # Align the stock returns with market returns
             aligned_stock_returns, aligned_market_returns = stock_returns.align(market_returns, join='inner')
