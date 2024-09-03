@@ -485,7 +485,7 @@ def main():
 tickers = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
 index_ticker = ['SPY']
 end_date = datetime.now()
-start_date = end_date - timedelta(days=365 * 54)  # 5 years of data
+start_date = end_date - timedelta(days=365 * 50)  # 50 years of data
 
 data, market_returns = load_and_process_data(tickers, index_ticker, start_date, end_date)
 
