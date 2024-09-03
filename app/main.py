@@ -414,11 +414,11 @@ def main():
     
     # Add visualization options
     st.sidebar.title("Visualization Options")
-    show_descriptive_stats = st.sidebar.checkbox("Show Descriptive Statistics", value=False)
-    show_stock_indicators = st.sidebar.checkbox("Show Stock Price and Indicators", value=False)
-    show_correlation = st.sidebar.checkbox("Show Correlation Heatmap", value=False)
-    show_returns_comparison = st.sidebar.checkbox("Show Returns Comparison", value=False)
-    show_financial_metrics = st.sidebar.checkbox("Show Financial Metrics", value=False)
+    show_descriptive_stats = st.sidebar.checkbox("Technical Indicators Descriptive Statistics", value=False)
+    show_stock_indicators = st.sidebar.checkbox("Stock Price and Technical Indicators", value=False)
+    show_correlation = st.sidebar.checkbox("Correlation Heatmap", value=False)
+    show_returns_comparison = st.sidebar.checkbox("Returns Comparison", value=False)
+    show_financial_metrics = st.sidebar.checkbox("Financial Metrics", value=False)
 
     # Create a placeholder for the processing message
     processing_message = st.empty()
