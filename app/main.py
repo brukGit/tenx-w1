@@ -334,26 +334,26 @@ def main():
             background-color: #252526;
             color: #BB86FC;
         }
-                 .fixed-header {
-        position: fixed;
-        top: 10%;
-        right: 2%;
-        width: 100%;
-        background-color: #252526;
-        z-index: 9999;
-        border-bottom: 1px solid #ddd;
-    }
-        
-        /* Sidebar styling */
-        [data-testid=stSidebar] {
-            background-color: #252526;
-        }
         
         /* Other styles remain unchanged */
         h1, h2, h3 {
             color: #BB86FC;
         }
         
+        /* Sidebar styling */
+        [data-testid=stSidebar] {
+            background-color: #aaa;
+        }
+        [data-testid=stSidebar] h1,h2,h3{
+            color: #020202;
+        }
+        
+        /* Improve visibility of sidebar text */
+        .stSidebar .stCheckbox label {
+            color: white !important;
+        }
+        
+      
         .stButton>button, .stSelectbox>div>div>select {
             background-color: #3700B3;
             color: #E0E0E0;
@@ -374,8 +374,20 @@ def main():
         .stPlot {
             background-color: #2C2C2C !important;
         }
+        
+        /* Style for the fixed header */
+        .fixed-header {
+            position: fixed;
+            top: 10%;
+            right: 2%;
+            width: 100%;
+            background-color: #252526;
+            z-index: 9999;
+            border-bottom: 1px solid #ddd;
+        }
     </style>
     """, unsafe_allow_html=True)
+        
 
     # Create a container for the main content
     main_container = st.container()
@@ -399,6 +411,14 @@ def main():
 
     start_date = st.sidebar.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
     end_date = st.sidebar.date_input("End Date", max_date, min_value=min_date, max_value=max_date)
+    
+    # Add visualization options
+    st.sidebar.title("Visualization Options")
+    show_descriptive_stats = st.sidebar.checkbox("Show Descriptive Statistics", value=False)
+    show_stock_indicators = st.sidebar.checkbox("Show Stock Price and Indicators", value=False)
+    show_correlation = st.sidebar.checkbox("Show Correlation Heatmap", value=False)
+    show_returns_comparison = st.sidebar.checkbox("Show Returns Comparison", value=False)
+    show_financial_metrics = st.sidebar.checkbox("Show Financial Metrics", value=False)
 
     # Create a placeholder for the processing message
     processing_message = st.empty()
@@ -439,41 +459,36 @@ def main():
             
             st.title("Stock Analysis Dashboard")
 
-            # # Descriptive statistics of indicators
-            # st.subheader("Descriptive Statistics of Indicators for All Tickers")
-            # fig1, fig2 = create_comparative_plots(data)
-            # st.pyplot(fig1)
-            # st.pyplot(fig2)
-             # Descriptive statistics of indicators
-            st.subheader(f"Descriptive Statistics of Indicators for {ticker_selection}".format(ticker_selection=ticker_selection))
-            fig1, fig2 = create_comparative_plots_per_ticker(filtered_data, ticker_selection)
-            st.pyplot(fig1)
-            st.pyplot(fig2)
+           
+            if show_descriptive_stats:
+                st.subheader(f"Descriptive Statistics of Indicators for {ticker_selection}")
+                fig1, fig2 = create_comparative_plots_per_ticker(filtered_data, ticker_selection)
+                st.pyplot(fig1)
+                st.pyplot(fig2)
 
-            # Plot stock price and indicators
-            st.subheader(f"Stock Price and Technical Indicators for {ticker_selection}".format(ticker_selection=ticker_selection))
-            fig = plot_stock_indicators(filtered_data[ticker_selection], ticker_selection)
-            st.pyplot(fig)
+            if show_stock_indicators:
+                st.subheader(f"Stock Price and Technical Indicators for {ticker_selection}")
+                fig = plot_stock_indicators(filtered_data[ticker_selection], ticker_selection)
+                st.pyplot(fig)
 
-            # Correlation between indicators and returns
-            st.subheader(f"Indicators to Returns Correlation for {ticker_selection}".format(ticker_selection=ticker_selection))
-            fig = plot_indicator_returns_correlation(filtered_data[ticker_selection], ticker_selection)
-            st.pyplot(fig)
+                st.subheader(f"Indicators to Returns Correlation for {ticker_selection}")
+                fig = plot_indicator_returns_correlation(filtered_data[ticker_selection], ticker_selection)
+                st.pyplot(fig)
 
-            # Plot returns comparison
-            st.subheader("Returns Comparison of All Tickers")
-            fig = plot_returns_comparison(filtered_data)
-            st.pyplot(fig)
+            if show_returns_comparison:
+                st.subheader("Returns Comparison of All Tickers")
+                fig = plot_returns_comparison(filtered_data)
+                st.pyplot(fig)
 
-            # Correlation heatmap
-            st.subheader("Correlation Heatmap of All Tickers")
-            fig = plot_correlation_heatmap(filtered_data)
-            st.pyplot(fig)
+            if show_correlation:
+                st.subheader("Correlation Heatmap of All Tickers")
+                fig = plot_correlation_heatmap(filtered_data)
+                st.pyplot(fig)
 
-            # Financial metrics
-            st.subheader("Financial Metrics of All Tickers")
-            metrics_df = calculate_financial_metrics(filtered_data, market_returns)
-            st.dataframe(metrics_df.style.background_gradient(cmap='viridis', axis=0))
+            if show_financial_metrics:
+                st.subheader("Financial Metrics of All Tickers")
+                metrics_df = calculate_financial_metrics(filtered_data, market_returns)
+                st.dataframe(metrics_df.style.background_gradient(cmap='viridis', axis=0))
 
            
 
@@ -484,8 +499,9 @@ def main():
 
 tickers = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
 index_ticker = ['SPY']
+year_gap = 50
 end_date = datetime.now()
-start_date = end_date - timedelta(days=365 * 54)  # 5 years of data
+start_date = end_date - timedelta(days=365 * year_gap)  # 50 years of data
 
 data, market_returns = load_and_process_data(tickers, index_ticker, start_date, end_date)
 
