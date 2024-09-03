@@ -34,7 +34,7 @@ def fetch_market_index(index_ticker, start_date, end_date):
 
 # Function Definitions
 @st.cache_data
-def load_and_process_data(tickers, ticker_spy, filepath_news, start_date, end_date):
+def load_and_process_data(tickers, ticker_spy, start_date, end_date):
     # Load data
     # Fetch stock data
     
@@ -50,7 +50,7 @@ def load_and_process_data(tickers, ticker_spy, filepath_news, start_date, end_da
     cleaned_stock_spy = {ticker: cleaner.clean_data(df,data_type='stock') for ticker, df in data_spy.items()}
     
     # Initialize the DataLoader for news data
-    loader_news = DataLoader('news', file_path=filepath_news)
+    # loader_news = DataLoader('news', file_path=filepath_news)
 
     # Load the news data
     news_data = loader_news.load_data()
@@ -589,13 +589,13 @@ def main():
     processing_message.empty()
 
 # tickers
-filepath_news = "../data/raw_analyst_ratings/raw_analyst_ratings.csv"
+# filepath_news = "../data/raw_analyst_ratings/raw_analyst_ratings.csv"
 tickers = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
 ticker_spy = ['SPY']
 end_date = datetime.now()
 start_date = end_date - timedelta(days=365 * 50)  # 50 years of data
 
-data_stock, data_news, aligned_data, correlation_series, market_returns = load_and_process_data(tickers, ticker_spy, filepath_news, start_date, end_date)
+data_stock, data_news, aligned_data, correlation_series, market_returns = load_and_process_data(tickers, ticker_spy, start_date, end_date)
 
 if __name__ == "__main__":
     main()
