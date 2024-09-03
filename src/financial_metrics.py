@@ -80,10 +80,6 @@ class FinancialMetrics:
         Calculate the Beta of each stock relative to the market.
 
         The Beta coefficient measures the volatility of a stock in relation to the overall market. 
-        This function aligns the stock returns with the corresponding market returns, calculates the covariance 
-        between the stock and the market, and divides it by the variance of the market returns. 
-        If the market variance is zero, Beta is set to NaN.
-
         Parameters:
             market_returns (pd.Series): A Pandas Series representing the market returns with dates as the index.
 

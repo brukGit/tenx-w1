@@ -1,6 +1,4 @@
 import pandas as pd
-import pytz
-
 import yfinance as yf
 from datetime import datetime, timedelta
 
@@ -41,7 +39,6 @@ class DataLoader:
 
         return dataframes
 
-
     def load_data(self):
         """
         Loads and processes the stock price data.
@@ -73,4 +70,3 @@ class DataLoader:
                 processed_dataframes[ticker] = df
 
         return processed_dataframes
-
